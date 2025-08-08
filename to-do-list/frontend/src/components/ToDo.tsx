@@ -185,7 +185,7 @@ const ToDo = () => {
     setError(null);
     try {
       await deleteTask(id);
-      setTasks(tasks.filter((task) => task._id !== id));
+      setTasks((tasks) => tasks.filter((task) => task._id !== id));
       if (selectedTask && selectedTask._id === id) {
         closeModal();
       }
@@ -358,8 +358,21 @@ const ToDo = () => {
             disabled={!newTaskTitle.trim()}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-lg py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ADD TASK +
+            {isLoading ? (
+              "Adding..."
+            ) : (
+              <>
+                ADD TASK <Plus className="inline w-4 h-4 ml-2" />
+              </>
+            )}
           </button>
+          
+          {/* Show error message if failed to add task */}
+          {error && (
+            <div className="text-red-500 text-sm mt-1" role="alert">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Task List Container - Fixed height with flex-grow */}
@@ -419,7 +432,7 @@ const ToDo = () => {
                   )}
                 </button>
                 <button
-                  onClick={() => deleteTask(task._id)}
+                  onClick={() => deleteTaskHandler(task._id)}
                   className="text-gray-400 hover:text-red-500 transition-colors duration-200"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -560,7 +573,7 @@ const ToDo = () => {
                     Mark as {selectedTask.completed ? "Pending" : "Completed"}
                   </button>
                   <button
-                    onClick={() => deleteTask(selectedTask._id)}
+                    onClick={() => deleteTaskHandler(selectedTask._id)}
                     className="py-2 px-4 rounded-lg border border-red-600 text-red-600 hover:bg-red-50"
                   >
                     Delete
