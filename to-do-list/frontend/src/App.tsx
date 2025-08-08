@@ -14,7 +14,7 @@
 
 // export default App
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import "./App.css";
 import TodoLayout from "./components/TodoLayout";
 import type { Task } from "./types/Task";
@@ -68,32 +68,59 @@ export default function App() {
       loadTasks();
     }, []);
 
-  const addTask = async () => {
-      if (!newTaskTitle.trim()) return;
+  // const addTask = async () => {
+  //     if (!newTaskTitle.trim()) return;
   
-      setIsLoading(true);
-      setError(null);
-      try {
-        const task = await createTask({
-          title: newTaskTitle,
-          description: newTaskDescription,
-        });
-        const normalizedTask = {
-          ...task,
-          createdAt:
-            typeof task.createdAt === "string"
-              ? task.createdAt
-              : new Date(task.createdAt).toISOString(),
-        };
-        setTasks([...tasks, normalizedTask]);
-        setNewTaskTitle("");
-        setNewTaskDescription("");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to create task");
-      } finally {
-        setIsLoading(false);
-      }
+  //     setIsLoading(true);
+  //     setError(null);
+  //     try {
+  //       const task = await createTask({
+  //         title: newTaskTitle,
+  //         description: newTaskDescription,
+  //       });
+  //       const normalizedTask = {
+  //         ...task,
+  //         createdAt:
+  //           typeof task.createdAt === "string"
+  //             ? task.createdAt
+  //             : new Date(task.createdAt).toISOString(),
+  //       };
+  //       setTasks([...tasks, normalizedTask]);
+  //       setNewTaskTitle("");
+  //       setNewTaskDescription("");
+  //     } catch (err) {
+  //       setError(err instanceof Error ? err.message : "Failed to create task");
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+
+const addTask = useCallback(async () => {
+  if (!newTaskTitle.trim()) return;
+  setIsLoading(true);
+  setError(null);
+  try {
+    const task = await createTask({
+      title: newTaskTitle,
+      description: newTaskDescription,
+    });
+    const normalizedTask = {
+      ...task,
+      createdAt:
+        typeof task.createdAt === "string"
+          ? task.createdAt
+          : new Date(task.createdAt).toISOString(),
     };
+    setTasks((prev) => [...prev, normalizedTask]);
+    setNewTaskTitle("");
+    setNewTaskDescription("");
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Failed to create task");
+  } finally {
+    setIsLoading(false);
+  }
+}, [newTaskTitle, newTaskDescription]);
 
   const handleKeyPress = (
     e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -103,7 +130,7 @@ export default function App() {
     }
   };
 
-  const toggleTask = async (id: string) => {
+  const toggleTask = useCallback(async (id: string) => {
       setIsLoading(true);
       setError(null);
       try {
@@ -123,7 +150,7 @@ export default function App() {
       } finally {
         setIsLoading(false);
       }
-    };
+    },[]);
   
   const deleteTaskHandler = async (id: string) => {
       setIsLoading(true);
@@ -191,6 +218,7 @@ export default function App() {
     // const task = tasks.find((t) => t._id === taskId) || null;
     setDraggedTask(taskId);
   };
+  
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };

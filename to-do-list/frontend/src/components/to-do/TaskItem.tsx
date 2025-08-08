@@ -1,6 +1,8 @@
+import { memo } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
 import type { TaskItemProps } from "../../types/props";
-export default function TaskItem({
+
+function TaskItem({
   task,
   draggedTask,
   handleDragStart,
@@ -9,7 +11,7 @@ export default function TaskItem({
   toggleTask,
   openTaskModal,
   deleteTaskHandler
-}:TaskItemProps) {
+}: TaskItemProps) {
   return (
     <div
       draggable
@@ -67,3 +69,14 @@ export default function TaskItem({
     </div>
   );
 }
+
+// Custom props comparison — re-render only if these change
+export default memo(TaskItem, (prevProps, nextProps) => {
+  return (
+    prevProps.task._id === nextProps.task._id &&
+    prevProps.task.title === nextProps.task.title &&
+    prevProps.task.description === nextProps.task.description &&
+    prevProps.task.completed === nextProps.task.completed &&
+    prevProps.draggedTask === nextProps.draggedTask
+  );
+});
