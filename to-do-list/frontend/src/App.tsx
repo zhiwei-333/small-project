@@ -213,17 +213,17 @@ const addTask = useCallback(async () => {
       }
     };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, taskId: string) => {
     e.dataTransfer.effectAllowed = "move";
     // const task = tasks.find((t) => t._id === taskId) || null;
     setDraggedTask(taskId);
-  };
+  },[]);
   
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-  };
+  },[]);
   
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>, taskId: string) => {
     e.preventDefault();
     if (!draggedTask) return;
     const updatedTasks = [...tasks];
@@ -234,7 +234,7 @@ const addTask = useCallback(async () => {
     updatedTasks.splice(toIndex, 0, moved);
     setTasks(updatedTasks);
     setDraggedTask(null);
-  };
+  },[]);
 
   const getTabCount = (tab: "all" | "pending" | "completed") => {
     if (tab === "all") return tasks.length;
