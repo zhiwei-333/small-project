@@ -3,11 +3,11 @@
 // import TodoLayout from './components/TodoLayout'
 
 // function App() {
-  
+
 //   return (
 //     <>
 //       <ToDo/>
-      
+
 //     </>
 //   )
 // }
@@ -45,32 +45,40 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Retrieve token once
+  const getToken = () => localStorage.getItem("token") || "";
+
   useEffect(() => {
-      const loadTasks = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const apiTasks = await fetchTasks();
-          const tasks = apiTasks.map((task: any) => ({
-            ...task,
-            createdAt:
-              typeof task.createdAt === "string"
-                ? task.createdAt
-                : new Date(task.createdAt).toISOString(),
-          }));
-          setTasks(tasks);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "Failed to load tasks");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      loadTasks();
-    }, []);
+    const loadTasks = async () => {
+      const token = getToken();
+      if (!token) {
+        setError("No token found. Please log in.");
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+      try {
+        const apiTasks = await fetchTasks(token);
+        const tasks = apiTasks.map((task: any) => ({
+          ...task,
+          createdAt:
+            typeof task.createdAt === "string"
+              ? task.createdAt
+              : new Date(task.createdAt).toISOString(),
+        }));
+        setTasks(tasks);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load tasks");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadTasks();
+  }, []);
 
   // const addTask = async () => {
   //     if (!newTaskTitle.trim()) return;
-  
+
   //     setIsLoading(true);
   //     setError(null);
   //     try {
@@ -95,32 +103,36 @@ export default function App() {
   //     }
   //   };
 
-
-const addTask = useCallback(async () => {
-  if (!newTaskTitle.trim()) return;
-  setIsLoading(true);
-  setError(null);
-  try {
-    const task = await createTask({
-      title: newTaskTitle,
-      description: newTaskDescription,
-    });
-    const normalizedTask = {
-      ...task,
-      createdAt:
-        typeof task.createdAt === "string"
-          ? task.createdAt
-          : new Date(task.createdAt).toISOString(),
-    };
-    setTasks((prev) => [...prev, normalizedTask]);
-    setNewTaskTitle("");
-    setNewTaskDescription("");
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Failed to create task");
-  } finally {
-    setIsLoading(false);
-  }
-}, [newTaskTitle, newTaskDescription]);
+  const addTask = useCallback(async () => {
+    if (!newTaskTitle.trim()) return;
+    const token = getToken();
+    if (!token) {
+      setError("No token found. Please log in.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const task = await createTask(
+        { title: newTaskTitle, description: newTaskDescription },
+        token
+      );
+      const normalizedTask = {
+        ...task,
+        createdAt:
+          typeof task.createdAt === "string"
+            ? task.createdAt
+            : new Date(task.createdAt).toISOString(),
+      };
+      setTasks((prev) => [...prev, normalizedTask]);
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create task");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [newTaskTitle, newTaskDescription]);
 
   const handleKeyPress = (
     e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -131,43 +143,42 @@ const addTask = useCallback(async () => {
   };
 
   const toggleTask = useCallback(async (id: string) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const updatedTask = await toggleTaskCompletion(id);
-        const normalizedUpdatedTask = {
-          ...updatedTask,
-          createdAt:
-            typeof updatedTask.createdAt === "string"
-              ? updatedTask.createdAt
-              : new Date(updatedTask.createdAt).toISOString(),
-        };
-        setTasks(
-          tasks.map((task) => (task._id === id ? normalizedUpdatedTask : task))
-        );
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to update task");
-      } finally {
-        setIsLoading(false);
-      }
-    },[]);
-  
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedTask = await toggleTaskCompletion(id);
+      const normalizedUpdatedTask = {
+        ...updatedTask,
+        createdAt:
+          typeof updatedTask.createdAt === "string"
+            ? updatedTask.createdAt
+            : new Date(updatedTask.createdAt).toISOString(),
+      };
+      setTasks(
+        tasks.map((task) => (task._id === id ? normalizedUpdatedTask : task))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update task");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const deleteTaskHandler = async (id: string) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await deleteTask(id);
-        setTasks((tasks) => tasks.filter((task) => task._id !== id));
-        if (selectedTask && selectedTask._id === id) {
-          closeModal();
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to delete task");
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    setError(null);
+    try {
+      await deleteTask(id);
+      setTasks((tasks) => tasks.filter((task) => task._id !== id));
+      if (selectedTask && selectedTask._id === id) {
+        closeModal();
       }
-    };
-  
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete task");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const openTaskModal = (task: Task) => {
     setSelectedTask(task);
@@ -183,46 +194,49 @@ const addTask = useCallback(async () => {
   };
 
   const saveEdit = async () => {
-      if (!selectedTask || !editTitle.trim()) return;
-  
-      setIsLoading(true);
-      setError(null);
-      try {
-        const updatedTask = await updateTask(selectedTask._id, {
-          title: editTitle,
-          description: editDescription,
-        });
-        const normalizedUpdatedTask = {
-          ...updatedTask,
-          createdAt:
-            typeof updatedTask.createdAt === "string"
-              ? updatedTask.createdAt
-              : new Date(updatedTask.createdAt).toISOString(),
-        };
-        setTasks(
-          tasks.map((task) =>
-            task._id === selectedTask._id ? normalizedUpdatedTask : task
-          )
-        );
-        setSelectedTask(normalizedUpdatedTask);
-        setIsEditing(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to update task");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!selectedTask || !editTitle.trim()) return;
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedTask = await updateTask(selectedTask._id, {
+        title: editTitle,
+        description: editDescription,
+      });
+      const normalizedUpdatedTask = {
+        ...updatedTask,
+        createdAt:
+          typeof updatedTask.createdAt === "string"
+            ? updatedTask.createdAt
+            : new Date(updatedTask.createdAt).toISOString(),
+      };
+      setTasks(
+        tasks.map((task) =>
+          task._id === selectedTask._id ? normalizedUpdatedTask : task
+        )
+      );
+      setSelectedTask(normalizedUpdatedTask);
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update task");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    taskId: string
+  ) => {
     e.dataTransfer.effectAllowed = "move";
     // const task = tasks.find((t) => t._id === taskId) || null;
     setDraggedTask(taskId);
   };
-  
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
-  
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
     e.preventDefault();
     if (!draggedTask) return;
