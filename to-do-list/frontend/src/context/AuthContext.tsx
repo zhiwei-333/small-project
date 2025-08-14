@@ -1,10 +1,10 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
   useEffect,
-  ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 import type { User, AuthContextType, RegisterData } from "../types/User";
 
 const AuthContext = createContext<AuthContextType | null>(null);
