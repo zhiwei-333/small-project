@@ -10,6 +10,7 @@ export interface Task {
 }
 
 export const fetchTasks = async (): Promise<Task[]> => {
+  console.log("[fetchTasks] Fetching tasks from API...");
   const response = await fetch(API_BASE_URL);
   if (!response.ok) {
     throw new Error("Failed to fetch tasks");
@@ -32,10 +33,15 @@ export const createTask = async (task: {
       completed: false,
     }),
   });
+ 
+  // This logs the actual data
+  const  data = await response.json();
+  console.log(data); // now logs the created task object
   if (!response.ok) {
     throw new Error("Failed to create task");
   }
-  return response.json();
+
+  return data;
 };
 
 export const updateTask = async (
@@ -55,6 +61,17 @@ export const updateTask = async (
   return response.json();
 };
 
+// export const toggleTaskCompletion = async (id: string): Promise<Task> => {
+//   const response = await fetch(`${API_BASE_URL}/${id}/toggle`, {
+//     method: "PATCH",
+//   });
+//   console.log(response.json);
+//   if (!response.ok) {
+//     throw new Error("Failed to toggle task");
+//   }
+//   return response.json();
+// };
+
 export const toggleTaskCompletion = async (id: string): Promise<Task> => {
   const response = await fetch(`${API_BASE_URL}/${id}/toggle`, {
     method: "PATCH",
@@ -62,13 +79,18 @@ export const toggleTaskCompletion = async (id: string): Promise<Task> => {
   if (!response.ok) {
     throw new Error("Failed to toggle task");
   }
-  return response.json();
+  
+  const data = await response.json();
+  console.log(data); // logs the updated task object
+  return data;
+  
 };
 
 export const deleteTask = async (id: string): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: "DELETE",
   });
+  console.log(response.json);
   if (!response.ok) {
     throw new Error("Failed to delete task");
   }
