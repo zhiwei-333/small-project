@@ -85,6 +85,7 @@ export interface Task {
   user: string; // Add user field
 }
 
+
 // Helper function to get authorization headers
 const getAuthHeaders = (token: string) => ({
   "Content-Type": "application/json",
@@ -95,6 +96,7 @@ export const fetchTasks = async (token: string): Promise<Task[]> => {
   const response = await fetch(API_BASE_URL, {
     headers: getAuthHeaders(token),
   });
+
   if (!response.ok) {
     throw new Error("Failed to fetch tasks");
   }
@@ -117,10 +119,15 @@ export const createTask = async (
       completed: false,
     }),
   });
+ 
+  // This logs the actual data
+  const  data = await response.json();
+  console.log(data); // now logs the created task object
   if (!response.ok) {
     throw new Error("Failed to create task");
   }
-  return response.json();
+
+  return data;
 };
 
 export const updateTask = async (
@@ -143,6 +150,7 @@ export const toggleTaskCompletion = async (
   id: string,
   token: string
 ): Promise<Task> => {
+
   const response = await fetch(`${API_BASE_URL}/${id}/toggle`, {
     method: "PATCH",
     headers: getAuthHeaders(token),
@@ -150,7 +158,11 @@ export const toggleTaskCompletion = async (
   if (!response.ok) {
     throw new Error("Failed to toggle task");
   }
-  return response.json();
+  
+  const data = await response.json();
+  console.log(data); // logs the updated task object
+  return data;
+  
 };
 
 export const deleteTask = async (id: string, token: string): Promise<void> => {
@@ -158,6 +170,7 @@ export const deleteTask = async (id: string, token: string): Promise<void> => {
     method: "DELETE",
     headers: getAuthHeaders(token),
   });
+  console.log(response.json);
   if (!response.ok) {
     throw new Error("Failed to delete task");
   }

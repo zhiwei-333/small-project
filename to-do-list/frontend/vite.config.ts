@@ -6,9 +6,12 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    port: 3000,         // 👈 Force Vite to use port 3000
+    strictPort: true,   // 👈 Optional: fail instead of using another port
+    
     proxy: {
       "/api": {
-        target: "http://localhost:5000", 
+        target: ":3000",
         changeOrigin: true,
         secure: false,
       },

@@ -238,6 +238,7 @@ export default function App() {
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
+
     e.preventDefault();
     if (!draggedTask) return;
     const updatedTasks = [...tasks];
@@ -248,7 +249,7 @@ export default function App() {
     updatedTasks.splice(toIndex, 0, moved);
     setTasks(updatedTasks);
     setDraggedTask(null);
-  };
+  },[]);
 
   const getTabCount = (tab: "all" | "pending" | "completed") => {
     if (tab === "all") return tasks.length;
