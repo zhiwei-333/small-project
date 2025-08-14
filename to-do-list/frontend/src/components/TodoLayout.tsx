@@ -66,6 +66,8 @@ export default function TodoLayout({
           deleteTaskHandler={deleteTaskHandler}
           activeTab={activeTab}
         />
+
+        
       </div>
 
       {isModalOpen && selectedTask && (
