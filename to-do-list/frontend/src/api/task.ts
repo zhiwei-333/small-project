@@ -73,6 +73,7 @@
 //     throw new Error("Failed to delete task");
 //   }
 // };
+
 const API_BASE_URL = "/api/tasks";
 
 export interface Task {
