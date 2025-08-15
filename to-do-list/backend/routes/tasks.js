@@ -19,10 +19,12 @@ router.use(protectRoute);
 
 // GET all tasks for the authenticated user
 router.get("/", async (req, res) => {
+  console.log("Backend: Fetching tasks for user:", req.user._id);
   try {
     const tasks = await Task.find({ user: req.user._id }).sort({
       createdAt: -1,
     });
+    console.log("Tasks fetched for user:", req.user._id);
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -42,6 +44,7 @@ router.get("/", async (req, res) => {
 
 // GET a single task (only if it belongs to the user)
 router.get("/:id", async (req, res) => {
+  
   try {
     const task = await Task.findOne({
       _id: req.params.id,
@@ -56,6 +59,8 @@ router.get("/:id", async (req, res) => {
 
 // POST create a new task
 router.post("/", async (req, res) => {
+  console.log("Creating new task for user:", req.user._id);
+  console.log("Request body:", req.body);
   const { title, description = "", completed = false } = req.body;
 
   if (!title || title.trim() === "") {
@@ -72,6 +77,7 @@ router.post("/", async (req, res) => {
   try {
     const newTask = await task.save();
     res.status(201).json(newTask);
+    console.log("New task created:", newTask._id);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

@@ -12,7 +12,7 @@ const AuthButton: React.FC<AuthButtonProps> = ({ text, onClick, type = "button" 
     <button
       type={type}
       onClick={onClick}
-      className="flex items-center justify-center w-full px-4 py-2 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-medium shadow-md transition-colors"
+      className="flex items-center justify-center w-full m-2 px-4 py-2 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-medium shadow-md transition-colors"
     >
       {text}
     </button>

@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import type { Task } from "../types/Task";
 import { axiosInstance } from "../lib/axios.js";
+import { useAuthStore } from "./useAuthStore";
 
 interface TaskState {
   tasks: Task[];
@@ -20,6 +21,9 @@ export const useTaskStore = create<TaskState>((set) => ({
   error: null,
 
   loadTasks: async () => {
+    console.log("Loading tasks...");
+    const {authUser} = useAuthStore.getState();
+    console.log("Current user id:", authUser?._id);
     set({ isLoading: true, error: null });
     try {
       const res = await axiosInstance.get("/tasks");
@@ -44,8 +48,11 @@ export const useTaskStore = create<TaskState>((set) => ({
   addTask: async (title, description) => {
     set({ isLoading: true, error: null });
     try {
+      console.log("Adding task:", { title, description,completed: false });
       const res = await axiosInstance.post("/tasks", { title, description });
+      console.log("Task added response:", res.data);
       const task = res.data;
+      console.log("Task state:", task);
       set((state) => ({
         tasks: [
           ...state.tasks,
@@ -58,6 +65,7 @@ export const useTaskStore = create<TaskState>((set) => ({
           },
         ],
       }));
+      console.log("Task added successfully:", task);
     } catch (err: any) {
       set({ error: err.response?.data?.message || "Failed to create task" });
     } finally {

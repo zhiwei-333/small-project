@@ -1,7 +1,9 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { axiosInstance } from "../lib/axios";
 
-// 
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
 export interface AuthUser {
   _id: string;
   name: string;
@@ -14,6 +16,7 @@ export interface SignupData {
   name: string;
   email: string;
   password: string;
+  confirmPassword:string;
 }
 
 export interface LoginData {
@@ -37,92 +40,105 @@ interface AuthStore {
   login: (data: LoginData) => Promise<any>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
   logout: () => Promise<void>;
+  refreshAccessToken: () => Promise<void>;
 }
 
-// 
-export const useAuthStore = create<AuthStore>((set, get) => ({
-  authUser: null,
-  isSigningUp: false,
-  isLoggingIn: false,
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
+      authUser: null,
+      isSigningUp: false,
+      isLoggingIn: false,
 
-  signup: async (data) => {
-    set({ isSigningUp: true });
-    console.log("Signup data:", data);
-
-    try {
-      const res = await axiosInstance.post<AuthUser>("/auth/signup", {
+      signup: async (data) => {
+        console.log("Signing up with data:", data)
+        set({ isSigningUp: true });
+        console.log("Signup in progress...");
+        try {
+          const res = await axiosInstance.post<AuthUser>("/auth/signup", {
         name: data.name,
         email: data.email,
         password: data.password,
+        confirmPassword: data.confirmPassword,
       });
+          set({ authUser: res.data });
+          console.log("Signup user:", res.data);
+          return get().authUser;
+        } finally {
+          set({ isSigningUp: false });
+        }
+      },
 
-      // Ideally update state with returned user
-      set({ authUser: res.data });
-      return get().authUser;
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      console.log("Error response data:", error.response?.data);
-      throw error;
-    } finally {
-      set({ isSigningUp: false });
-    }
-  },
-
-  login: async (data) => {
-    set({ isLoggingIn: true });
-    try {
-      const res = await axiosInstance.post<{ token: string; user: AuthUser }>("/auth/login", {
+      login: async (data) => {
+        console.log("Logging in with data:", data);
+        set({ isLoggingIn: true });
+        console.log("Login in progress...");
+        try {
+          const res = await axiosInstance.post<{
+            accessToken: string;
+            user: AuthUser;
+          }>("/auth/login", {
         email: data.email,
         password: data.password,
       });
+          console.log("Login response:", res.data);
+          const { accessToken } = res.data;
+          localStorage.setItem("token", accessToken);
+          axiosInstance.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
-      const { token, user } = res.data;
-      localStorage.setItem("token", token);
-      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          // Schedule refresh in 4.5 min
+          if (refreshTimer) clearTimeout(refreshTimer);
+          refreshTimer = setTimeout(() => get().refreshAccessToken(), 4.5 * 60 * 1000);
 
-      set({ authUser: user });
-      return res.data;
-    } catch (error: any) {
-      console.error("Login error:", error.response?.data);
+          // set({ authUser: user });
+          set({ authUser: res.data.user }); // after successful login
+          return res.data;
+        } finally {
+          set({ isLoggingIn: false });
+        }
+      },
 
-      const status = error.response?.status;
-      const serverMessage = error.response?.data?.message;
+      refreshAccessToken: async () => {
+        try {
+          const res = await axiosInstance.post<{ accessToken: string }>("/auth/refresh");
+          const { accessToken } = res.data;
+          console.log("Access token refreshed:", accessToken);
 
-      let userMessage = "Login failed. Please try again.";
-      if (status === 400) {
-        userMessage = serverMessage || "Invalid email or password.";
-      } else if (status === 500) {
-        userMessage = "Server error. Please try again later.";
-      }
+          localStorage.setItem("token", accessToken);
+          axiosInstance.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
-      throw new Error(userMessage);
-    } finally {
-      set({ isLoggingIn: false });
+          if (refreshTimer) clearTimeout(refreshTimer);
+          refreshTimer = setTimeout(() => get().refreshAccessToken(), 1 * 60 * 1000);
+        } catch (err) {
+          console.error("Token refresh failed:", err);
+          get().logout();
+        }
+      },
+
+      updateProfile: async (data) => {
+        const userId = get().authUser?._id;
+        if (!userId) throw new Error("User ID not found");
+        const res = await axiosInstance.put<AuthUser>(`/users/${userId}`, data);
+        set({ authUser: res.data });
+      },
+
+      logout: async () => {
+        try {
+          console.log("Logging out user:", get().authUser?._id);
+          await axiosInstance.post("/auth/logout");
+        } finally {
+          localStorage.removeItem("refreshToken");
+          delete axiosInstance.defaults.headers.common.Authorization;
+          set({ authUser: null });
+          if (refreshTimer) clearTimeout(refreshTimer);
+        }
+      },
+    }),
+    {
+      name: "auth-storage", // key in localStorage
+      partialize: (state) => ({
+        authUser: state.authUser, // persist only authUser
+      }),
     }
-  },
-
-  updateProfile: async (data) => {
-    try {
-      const userId = get().authUser?._id;
-      if (!userId) throw new Error("User ID not found");
-
-      const res = await axiosInstance.put<AuthUser>(`/users/${userId}`, data);
-      set({ authUser: res.data });
-    } catch (error) {
-      console.log("Error in update profile:", error);
-    }
-  },
-
-  logout: async () => {
-    try {
-      await axiosInstance.post("/auth/logout");
-
-      localStorage.removeItem("token");
-      delete axiosInstance.defaults.headers.common["Authorization"];
-
-      set({ authUser: null });
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  },
-}));
+  )
+);

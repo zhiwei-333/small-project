@@ -5,6 +5,7 @@ import TodoLayout from "../components/TodoLayout";
 import type { Task } from "../types/Task";
 import AuthButton from "../components/auth/AuthButton";
 import { useTaskStore } from "../store/useTaskStore";
+import { useAuthStore } from "../store/useAuthStore";
 
 export default function TodoPage() {
   const navigate = useNavigate();
@@ -32,16 +33,25 @@ export default function TodoPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
-  const getToken = () => localStorage.getItem("token") || "";
+  const { authUser,logout } = useAuthStore();
+
+useEffect(() => {
+  console.log("Fetching tasks for user:", authUser?._id);
+  if (authUser) {
+    loadTasks();
+  }
+}, [authUser, loadTasks]);
+
+  // const getToken = () => localStorage.getItem("token") || "";
 
   // Load tasks on mount
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      return;
-    }
-    loadTasks();
-  }, [loadTasks]);
+  // useEffect(() => {
+  //   const token = getToken();
+  //   if (!token) {
+  //     return;
+  //   }
+  //   loadTasks();
+  // }, [loadTasks]);
 
   // Add task handler
   const handleAddTask = useCallback(async () => {
@@ -50,6 +60,12 @@ export default function TodoPage() {
     setNewTaskTitle("");
     setNewTaskDescription("");
   }, [newTaskTitle, newTaskDescription, addTask]);
+
+  // handle logout
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === "Enter") handleAddTask();
@@ -153,8 +169,12 @@ export default function TodoPage() {
         error={error}
       />
       <div style={{ position: "fixed", bottom: "20px", right: "20px", zIndex: 1000 }}>
+        {!authUser && (<>
         <AuthButton text="Login" onClick={() => navigate("/login")} />
         <AuthButton text="Signup" onClick={() => navigate("/signup")} />
+          </>)}
+        
+        {authUser&&(<AuthButton text="Logout" onClick={() => handleLogout()} />)}
       </div>
     </>
   );

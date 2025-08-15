@@ -4,19 +4,36 @@ dotenv.config();
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import taskRoutes from "./routes/tasks.js";
+import authRoutes from "./routes/auth.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+console.log("Current file:", __filename);
+const __dirname = path.dirname(__filename);
+console.log("Current directory:", __dirname);
 const app = express();
+
+app.use(express.json());
 
 // Middleware
 // Configure CORS
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: "https://testdeeplink.huozhong.us",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 };
 app.use(cors(corsOptions));
-app.use(express.json());
+
+app.use(cookieParser());
+
+// Serve frontend build
+// app.use(express.static(path.join(__dirname, "static"))); 
+
+let users = []; // In-memory user store
+let refreshTokens = []; // Store valid refresh tokens (DB recommended)
 
 // MongoDB Connection
 mongoose
@@ -25,10 +42,30 @@ mongoose
   .catch((err) => console.error(" MongoDB connection error:", err));
 
 // Routes
+console.log("Registering /api/tasks routes");
 app.use("/api/tasks", taskRoutes);
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+console.log("Registering /api/auth routes");
+app.use("/api/auth", authRoutes);
+
+// const __dirname = path.resolve();
+app.use(express.static(path.join(__dirname, "static")));
+
+// Start server on 0.0.0.0
+const HOST = "0.0.0.0";
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
 });
+
+
+// app.use(express.static(path.join(__dirname, "../frontend/dist")));
+// app.use(express.static(path.join(__dirname, "static")));
+
+// 3. Catch-all SPA fallback last
+// app.get("*", (req, res) => {
+//   res.sendFile(path.join(__dirname, "static", "index.html"));
+// });
+// const __dirname = path.resolve();
+// app.use(express.static(path.join(__dirname, "dist"))); // change to 'build' if CRA

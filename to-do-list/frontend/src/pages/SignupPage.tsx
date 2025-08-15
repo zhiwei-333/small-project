@@ -14,8 +14,9 @@ const SignupPage: React.FC = () => {
     name: "",
     email: "",
     password: "",
+    confirmPassword:"",
   });
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -25,7 +26,7 @@ const SignupPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== confirmPassword) {
+    if (form.password !== form.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
@@ -34,7 +35,12 @@ const SignupPage: React.FC = () => {
     setError(null);
 
     try {
-      await signup(form);
+      await signup({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+      });
       navigate("/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
@@ -44,7 +50,7 @@ const SignupPage: React.FC = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-900 px-4">
       <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
           Create Account
@@ -78,8 +84,8 @@ const SignupPage: React.FC = () => {
             type="password"
             name="confirmPassword"
             label="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            value={form.confirmPassword}
+            onChange={handleChange}
           />
 
           {error && <p className="text-red-500 text-sm">{error}</p>}

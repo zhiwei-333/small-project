@@ -5,13 +5,14 @@ import tailwindcss from "@tailwindcss/vite";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  base:"/",
   server: {
-    port: 3000,         // 👈 Force Vite to use port 3000
-    strictPort: true,   // 👈 Optional: fail instead of using another port
+    port: 5000,         // 👈 Force Vite to use port 3000
+    strictPort: false,   // 👈 Optional: fail instead of using another port
     
     proxy: {
       "/api": {
-        target: ":3000",
+        target: "http://localhost:3000",
         changeOrigin: true,
         secure: false,
       },
