@@ -2,27 +2,27 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import RefreshToken from "../models/RefreshToken.js";
 
 const router = express.Router();
 
 const refreshTokens = new Set();
+
 const generateAccessToken = (user) =>
   jwt.sign({ id: user._id, email: user.email }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "2m", // 5 minutes
+    expiresIn: "2m", // short-lived access token
   });
 
 const generateRefreshToken = (user) =>
   jwt.sign({ id: user._id, email: user.email }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: "7d", // 7 days
+    expiresIn: "7d", // long-lived refresh token
   });
 
-  const setRefreshCookie = (res, token) => {
+const setRefreshCookie = (res, token) => {
   res.cookie("refreshToken", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // true on HTTPS
+    secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/", // cookie available to all routes
+    path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
@@ -51,18 +51,11 @@ router.post("/signup", async (req, res) => {
       profilePic: profilePic || null,
     });
 
-    // const token = generateToken(user._id);
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
+
     refreshTokens.add(refreshToken);
     setRefreshCookie(res, refreshToken);
-
-    // res.cookie("jwt", token, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   sameSite: "strict",
-    //   maxAge: 7 * 24 * 60 * 60 * 1000,
-    // });
 
     res.status(201).json({
       accessToken,
@@ -89,30 +82,18 @@ router.post("/login", async (req, res) => {
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    // const token = generateToken(user._id);
-
-    // res.cookie("jwt", token, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   sameSite: "strict",
-    //   maxAge: 7 * 24 * 60 * 60 * 1000,
-    // });
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
+
     refreshTokens.add(refreshToken);
     setRefreshCookie(res, refreshToken);
 
-    res.status(200).json({
+    res.json({
       accessToken,
       user: {
         _id: user._id,
@@ -121,15 +102,15 @@ router.post("/login", async (req, res) => {
         gender: user.gender,
         profilePic: user.profilePic,
       },
-    })
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// LOGOUT
 router.post("/logout", (req, res) => {
   const token = req.cookies?.refreshToken;
-  console.log("Logging out user, token:", token);
   if (token) refreshTokens.delete(token);
 
   res.clearCookie("refreshToken", {
@@ -139,44 +120,34 @@ router.post("/logout", (req, res) => {
     path: "/",
   });
 
-  return res.json({ message: "Logged out successfully" });
+  res.json({ message: "Logged out successfully" });
 });
 
-router.post("/refresh", async (req, res) => {
-  try {
-    const token = req.cookies?.refreshToken;
-    if (!token) return res.status(401).json({ message: "No refresh token" });
+// REFRESH
+router.post("/refresh", (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (!token) return res.status(401).json({ message: "No refresh token" });
 
-    // Check in DB
-    const storedToken = await RefreshToken.findOne({ token });
-    if (!storedToken) {
-      return res.status(403).json({ message: "Refresh token invalid" });
-    }
-
-    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err, payload) => {
-      if (err) {
-        await RefreshToken.deleteOne({ token });
-        return res.status(403).json({ message: "Refresh token expired/invalid" });
-      }
-
-      const user = await User.findById(payload.id);
-      if (!user) {
-        await RefreshToken.deleteOne({ token });
-        return res.status(403).json({ message: "User no longer exists" });
-      }
-
-      // Rotate refresh token
-      await RefreshToken.deleteOne({ token });
-      const newRefreshToken = await generateRefreshToken(user);
-      setRefreshCookie(res, newRefreshToken);
-
-      // Create new access token
-      const accessToken = generateAccessToken(user);
-      return res.json({ accessToken });
-    });
-  } catch (e) {
-    return res.status(500).json({ message: e.message });
+  if (!refreshTokens.has(token)) {
+    return res.status(403).json({ message: "Invalid refresh token" });
   }
+
+  jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, payload) => {
+    if (err) {
+      refreshTokens.delete(token);
+      return res.status(403).json({ message: "Refresh token expired/invalid" });
+    }
+    
+    // Rotate token
+    refreshTokens.delete(token);
+    const user = { _id: payload.id, email: payload.email };
+    const newRefreshToken = generateRefreshToken(user);
+    refreshTokens.add(newRefreshToken);
+    setRefreshCookie(res, newRefreshToken);
+
+    const newAccessToken = generateAccessToken(user);
+    res.json({ accessToken: newAccessToken });
+  });
 });
 
 export default router;

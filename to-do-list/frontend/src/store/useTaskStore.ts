@@ -13,6 +13,7 @@ interface TaskState {
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   updateTaskDetails: (id: string, title: string, description: string) => Promise<void>;
+  reorderTasks: (fromIndex: number, toIndex: number) => void;
 }
 
 export const useTaskStore = create<TaskState>((set) => ({
@@ -136,4 +137,12 @@ export const useTaskStore = create<TaskState>((set) => ({
       set({ isLoading: false });
     }
   },
+
+  reorderTasks: (fromIndex: number, toIndex: number) =>
+  set((state) => {
+    const updated = [...state.tasks];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+    return { tasks: updated };
+  }),
 }));

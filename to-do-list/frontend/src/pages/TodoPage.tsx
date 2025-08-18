@@ -20,6 +20,7 @@ export default function TodoPage() {
     toggleTask,
     deleteTask,
     updateTaskDetails,
+    reorderTasks,
   } = useTaskStore();
 
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">("all");
@@ -108,17 +109,29 @@ useEffect(() => {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
+  // const handleDrop = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
+  //   e.preventDefault();
+  //   if (!draggedTask) return;
+  //   const updatedTasks = [...tasks];
+  //   const fromIndex = updatedTasks.findIndex((t) => t._id === draggedTask);
+  //   const toIndex = updatedTasks.findIndex((t) => t._id === taskId);
+  //   if (fromIndex === -1 || toIndex === -1) return;
+  //   const [moved] = updatedTasks.splice(fromIndex, 1);
+  //   updatedTasks.splice(toIndex, 0, moved);
+  //   // Local reordering only
+  //   // You may call an API if backend ordering is needed
+  //   setDraggedTask(null);
+  // };
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
     e.preventDefault();
     if (!draggedTask) return;
-    const updatedTasks = [...tasks];
-    const fromIndex = updatedTasks.findIndex((t) => t._id === draggedTask);
-    const toIndex = updatedTasks.findIndex((t) => t._id === taskId);
+
+    const fromIndex = tasks.findIndex((t) => t._id === draggedTask);
+    const toIndex = tasks.findIndex((t) => t._id === taskId);
     if (fromIndex === -1 || toIndex === -1) return;
-    const [moved] = updatedTasks.splice(fromIndex, 1);
-    updatedTasks.splice(toIndex, 0, moved);
-    // Local reordering only
-    // You may call an API if backend ordering is needed
+
+    reorderTasks(fromIndex, toIndex);
     setDraggedTask(null);
   };
 

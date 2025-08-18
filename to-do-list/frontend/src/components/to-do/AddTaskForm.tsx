@@ -1,4 +1,6 @@
 import type { AddTaskFormProps } from "../../types/props";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/useAuthStore";
 
 export default function AddTaskForm({
   newTaskTitle,
@@ -8,6 +10,9 @@ export default function AddTaskForm({
   addTask,
   handleKeyPress
 }:AddTaskFormProps) {
+  const navigate = useNavigate();
+  const { authUser } = useAuthStore();
+
   return (
     <div className="space-y-3 mb-6">
       <input
@@ -27,11 +32,11 @@ export default function AddTaskForm({
         rows={2}
       />
       <button
-        onClick={addTask}
+        onClick={authUser?addTask: (() => navigate("/login"))}
         disabled={!newTaskTitle.trim()}
         className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-lg py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        ADD TASK +
+        {authUser?"Add Task +": "Login to Add Task"}
       </button>
     </div>
   );
