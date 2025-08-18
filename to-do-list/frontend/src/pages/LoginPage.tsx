@@ -30,7 +30,7 @@ const LoginPage: React.FC = () => {
       await login(form); // Call store login method
       navigate("/");     // Redirect after successful login
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError("Login failed. Please try again.");
     } finally {
       setIsLoggingIn(false);
     }
@@ -61,7 +61,7 @@ const LoginPage: React.FC = () => {
 
             <a
             id="forgotPwLink"
-            href="/forgot_password"
+            href="#"
             className="text-sm text-orange-600 hover:underline block text-right"
             >
             Forgot Password?

@@ -43,7 +43,7 @@ const SignupPage: React.FC = () => {
       });
       navigate("/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
+      setError("Signup failed. Please try again.");
     } finally {
       setIsSigningUp(false);
     }
