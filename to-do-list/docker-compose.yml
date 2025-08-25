@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: myapp
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - mongodb_network
+
+  todo-app:
+      image: to-do-app-image
+      container_name: todo-app
+      restart: unless-stopped
+      ports:
+        - "3000:3000"
+      environment:
+        MONGO_URI: "mongodb://admin:password123@mongodb:27017/myapp?authSource=admin"
+        PORT: 3000
+        JWT_SECRET: "mysecretkey"
+        ACCESS_TOKEN_SECRET: "your_very_secret_access_key"
+        REFRESH_TOKEN_SECRET: "your_very_secret_refresh_key"
+        NODE_ENV: "development"
+      depends_on:
+        - mongodb
+      networks:
+        - app_network
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  mongodb_network:
+    driver: bridge
+  app_network:
+    driver: bridge

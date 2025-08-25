@@ -3,12 +3,12 @@
     "target": "es6",
     "module": "commonjs",
     "rootDir": "./",
-    "outDir": "./dist",
+    "outDir": "static",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowJs": true // <--- This lets TS compile JS files
   },
   "include": ["**/*"],
-  "exclude": ["dist"]
+  "exclude": ["staticic"]
 }

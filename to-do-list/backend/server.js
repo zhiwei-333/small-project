@@ -21,7 +21,7 @@ app.use(express.json());
 // Middleware
 // Configure CORS
 const corsOptions = {
-  origin: "https://testdeeplink.huozhong.us",
+  origin: "https://todo.huozhong.us",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 };

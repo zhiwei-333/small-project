@@ -12,7 +12,7 @@ export default defineConfig({
     
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "https://todo.huozhong.us",
         changeOrigin: true,
         secure: false,
       },
